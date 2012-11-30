@@ -15,7 +15,13 @@ Mappings.prototype.resolve = function(uri, silent) {
     try {
         var uriParts = uri.split("/");
         var path = walkPackagesForName(this.packagePath, uriParts.shift());
-        return PATH.resolve(path, uriParts.join("/"));
+
+        // TODO: Load descriptor to resolve `directories.lib`.
+
+        var modulePath = PATH.join(path, uriParts.join("/"));
+
+        return modulePath;
+
     } catch(err) {
         if (silent === true) {
             return false;
@@ -27,15 +33,15 @@ Mappings.prototype.resolve = function(uri, silent) {
 
 
 function walkPackagesForName(packagePath, name) {
-    var path = PATH.resolve(packagePath, "mapped_packages", name);
+    var path = PATH.join(packagePath, "mapped_packages", name);
     if (PATH.existsSync(path)) {
         return path;
     }
-    path = PATH.resolve(packagePath, "node_modules", name);
+    path = PATH.join(packagePath, "node_modules", name);
     if (PATH.existsSync(path)) {
         return path;
     }
-    var nextPath = PATH.resolve(packagePath, "..");
+    var nextPath = PATH.join(packagePath, "..");
     if (nextPath === packagePath) {
         throw new Error("No mapped package found for alias '" + name + "'");
     }
