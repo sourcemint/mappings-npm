@@ -1,6 +1,6 @@
 
 const PATH = require("path");
-
+const FS = require("fs");
 
 exports.for = function(packagePath) {
     return new Mappings(packagePath);
@@ -16,9 +16,26 @@ Mappings.prototype.resolve = function(uri, silent) {
         var uriParts = uri.split("/");
         var path = walkPackagesForName(this.packagePath, uriParts.shift());
 
-        // TODO: Load descriptor to resolve `directories.lib`.
+        // TODO: Use `sm-pinf-js` to load descriptor.
+        var descriptorPath = PATH.join(path, "package.json");
+        var descriptor = null;
+        try {
+            if (PATH.existsSync(descriptorPath)) {
+                descriptor = JSON.parse(FS.readFileSync(descriptorPath));
+            }
+        } catch(err) {
+            throw new Error("Error parsing JSON file: " + descriptorPath);
+        }
 
-        var modulePath = PATH.join(path, uriParts.join("/"));
+        var libDir = (
+            descriptor &&
+            descriptor.directories &&
+            typeof descriptor.directories.lib !== "undefined"
+        ) ? descriptor.directories.lib : "lib";
+
+        var modulePath = PATH.join(path, libDir, uriParts.join("/"));
+
+        modulePath = modulePath.replace(/\.js$/, "") + ".js";
 
         return modulePath;
 
