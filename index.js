@@ -15,27 +15,36 @@ Mappings.prototype.resolve = function(uri, silent) {
     try {
         var uriParts = uri.split("/");
         var path = walkPackagesForName(this.packagePath, uriParts.shift());
+        var modulePath = false;
 
-        // TODO: Use `sm-pinf-js` to load descriptor.
-        var descriptorPath = PATH.join(path, "package.json");
-        var descriptor = null;
-        try {
-            if (PATH.existsSync(descriptorPath)) {
-                descriptor = JSON.parse(FS.readFileSync(descriptorPath));
+        // If no `.` found in last segment of `uri` we assume it is a module
+        // in which case we splice in `libDir` if applicable.
+        if (uriParts[uriParts.length-1].indexOf(".") === -1) {
+
+            // TODO: Use `sm-pinf-js` to load descriptor.
+            var descriptorPath = PATH.join(path, "package.json");
+            var descriptor = null;
+            try {
+                if (PATH.existsSync(descriptorPath)) {
+                    descriptor = JSON.parse(FS.readFileSync(descriptorPath));
+                }
+            } catch(err) {
+                throw new Error("Error parsing JSON file: " + descriptorPath);
             }
-        } catch(err) {
-            throw new Error("Error parsing JSON file: " + descriptorPath);
+
+            var libDir = (
+                descriptor &&
+                descriptor.directories &&
+                typeof descriptor.directories.lib !== "undefined"
+            ) ? descriptor.directories.lib : "lib";
+
+            modulePath = PATH.join(path, libDir, uriParts.join("/")).replace(/\.js$/, "") + ".js";
+
+        } else {
+
+            modulePath = PATH.join(path, uriParts.join("/"));
+
         }
-
-        var libDir = (
-            descriptor &&
-            descriptor.directories &&
-            typeof descriptor.directories.lib !== "undefined"
-        ) ? descriptor.directories.lib : "lib";
-
-        var modulePath = PATH.join(path, libDir, uriParts.join("/"));
-
-        modulePath = modulePath.replace(/\.js$/, "") + ".js";
 
         return modulePath;
 
