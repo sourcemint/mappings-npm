@@ -40,12 +40,11 @@ Mappings.prototype.resolve = function(uri, silent) {
 
             modulePath = PATH.join(path, libDir, uriParts.join("/")).replace(/\.js$/, "") + ".js";
 
-        } else {
-
-            modulePath = PATH.join(path, uriParts.join("/"));
-
+            if (!PATH.existsSync(modulePath)) modulePath = false;
         }
-
+        if (!modulePath) {
+            modulePath = PATH.join(path, uriParts.join("/"));
+        }
         return modulePath;
 
     } catch(err) {
